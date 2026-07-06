@@ -3,7 +3,15 @@ import { WebsocketProvider } from 'y-websocket'
 import { MeshDoc, type SelMode } from '../mesh/meshDoc'
 import { useApp } from '../state/store'
 
-export const SERVER_URL: string = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:4000'
+// Where the sync websocket + scoring API live.
+//   - explicit VITE_SERVER_URL always wins (e.g. client hosted separately from the server)
+//   - a production build with no override talks to whoever served the bundle (same-origin),
+//     which is how the single-service deploy works: the Node server serves this client
+//   - dev falls back to the local server on :4000 (Vite serves the client on :5173)
+export const SERVER_URL: string =
+  import.meta.env.VITE_SERVER_URL ??
+  (import.meta.env.PROD ? location.origin : 'http://localhost:4000')
+// https -> wss, http -> ws (replace only touches the leading scheme)
 const WS_URL = SERVER_URL.replace(/^http/, 'ws')
 
 function roomFromUrl(): string {

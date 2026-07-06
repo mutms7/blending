@@ -1,5 +1,8 @@
 import 'dotenv/config'
 import http from 'http'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import express from 'express'
 import cors from 'cors'
 import { WebSocketServer } from 'ws'
@@ -84,6 +87,21 @@ app.post('/daily/submit', async (req, res) => {
     res.status(502).json({ error: 'scoring_failed' })
   }
 })
+
+// In production the built client is served from this same process, so the whole game
+// (static bundle + scoring API + Yjs websocket sync) lives at one origin and one deploy.
+// Guarded on existence so `tsx watch` in dev (no client build yet) still boots — dev serves
+// the client from Vite on :5173 instead. Registered AFTER the API routes so /health, /score,
+// and /daily win; the SPA fallback only handles GETs that aren't real files.
+const here = path.dirname(fileURLToPath(import.meta.url))
+const clientDist = path.resolve(here, '../../client/dist')
+if (fs.existsSync(path.join(clientDist, 'index.html'))) {
+  app.use(express.static(clientDist))
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(clientDist, 'index.html'))
+  })
+  console.log(`serving client from ${clientDist}`)
+}
 
 const server = http.createServer(app)
 

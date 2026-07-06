@@ -1,0 +1,21 @@
+# One always-on Node web service that serves the built client, the scoring API, and the
+# Yjs websocket room sync all on the same port. Render injects $PORT (the server reads it)
+# and terminates TLS, so websockets are upgraded to wss automatically.
+#
+# Deploy: push this repo to GitHub, then in the Render dashboard "New +" -> "Blueprint" and
+# point it at the repo. Set ANTHROPIC_API_KEY (marked sync:false below so it's a secret you
+# enter once in the dashboard). Share the resulting https URL with ?room=<code> to invite.
+services:
+  - type: web
+    name: blend-together
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # node:sqlite (used by the daily challenge) needs Node 22+.
+      - key: NODE_VERSION
+        value: 22.11.0

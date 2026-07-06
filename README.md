@@ -177,17 +177,31 @@ leaderboard + streaks in one shot. The database lives in `server/data/blend.db`
 
 ## Deployment
 
-WebSockets need a stateful host, so the two halves deploy differently:
+WebSockets need a stateful host, so this deploys as **one always-on Node service** that serves
+everything, the built client, the scoring API, and the Yjs room sync, on a single port and
+origin. That's what makes online multiplayer "just work": friends open the same
+`https://your-app/?room=<code>` link (or share the **Invite** button), and their browsers sync
+against the server that served the page. No separate client/API URLs to keep in step.
 
-- **Server** → Render / Railway / Fly (anything that runs a long-lived Node process).
-  Set `ANTHROPIC_API_KEY` (and optionally `PORT`, `SCORING_MODEL`).
-  Build with `npm run build -w server`, start with `npm start -w server`.
-- **Client** → any static host (Netlify, Vercel, GitHub Pages, Cloudflare Pages).
-  Set `VITE_SERVER_URL=https://your-server.example.com` at build time, then
-  `npm run build -w client` and publish `client/dist/`.
+**Render (recommended, config included).** Push the repo to GitHub, then in Render pick
+**New + → Blueprint** and point it at the repo — [`render.yaml`](render.yaml) provisions the
+service. Set `ANTHROPIC_API_KEY` (a secret in the dashboard). Build is `npm install && npm run
+build`; start is `npm start`. Render injects `$PORT` (the server reads it) and terminates TLS,
+so sync is upgraded to `wss://` automatically. Any host that runs a long-lived Node 22+ process
+(Railway, Fly, a VPS) works the same way with those two commands.
+
+- The build order matters: root `npm run build` builds the server then the client, so
+  `client/dist/` exists for the server to serve at boot.
+- Optionally override `SCORING_MODEL`. `$PORT` defaults to 4000 if unset.
+
+**Hosting the client separately (optional).** If you'd rather put the static bundle on a CDN
+(Netlify, Vercel, Cloudflare Pages) and run only the API/sync as the Node service, build the
+client with `VITE_SERVER_URL=https://your-server.example.com` — an explicit `VITE_SERVER_URL`
+always overrides the same-origin default.
 
 Room documents are held in server memory (rooms are ephemeral party lobbies); restarting
-the server clears in-progress models.
+the server clears in-progress models. On Render's free tier the process also sleeps after
+inactivity and cold-starts on the next visit.
 
 ## Phase status
 
