@@ -83,7 +83,7 @@ export function publishCursor(point: [number, number, number] | null) {
 // ---------------------------------------------------------------------------
 
 function selectionStillValid(mode: SelMode, id: string): boolean {
-  if (mode === 'face') return mesh.faces.has(id)
+  if (mode === 'face' || mode === 'object') return mesh.faces.has(id)
   if (mode === 'vertex') return mesh.verts.has(id)
   const [a, b] = id.split('~')
   return mesh.verts.has(a) && mesh.verts.has(b)
@@ -100,6 +100,8 @@ const bumpMesh = () => {
 }
 mesh.verts.observe(bumpMesh)
 mesh.faces.observe(bumpMesh)
+mesh.faceColors.observe(bumpMesh)
+mesh.vertColors.observe(bumpMesh)
 
 // publish my selection so other players see what I'm grabbing
 let lastPublished: { mode: SelMode; ids: string[] } | null = null

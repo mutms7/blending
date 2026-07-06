@@ -14,12 +14,13 @@ const MODES: Array<{ mode: SelMode; label: string; key: string }> = [
   { mode: 'vertex', label: 'Vertex', key: '1' },
   { mode: 'edge', label: 'Edge', key: '2' },
   { mode: 'face', label: 'Face', key: '3' },
+  { mode: 'object', label: 'Object', key: '4' },
 ]
 
 const GIZMOS: Array<{ mode: GizmoMode; label: string; key: string }> = [
-  { mode: 'translate', label: 'Move', key: 'W' },
+  { mode: 'translate', label: 'Move', key: 'G' },
   { mode: 'rotate', label: 'Rotate', key: 'R' },
-  { mode: 'scale', label: 'Scale', key: 'S' },
+  { mode: 'scale', label: 'Scale', key: 'T' },
 ]
 
 export default function Toolbar() {
@@ -33,7 +34,7 @@ export default function Toolbar() {
 
   const locked = phase === 'scoring' || phase === 'reveal'
   const hasSel = selection.length > 0
-  const faceSel = mode === 'face' && hasSel
+  const faceSel = (mode === 'face' || mode === 'object') && hasSel
   const playing = phase === 'playing'
   const noAdds = locked || (playing && modifiers?.budget != null && addsUsed >= modifiers.budget)
   const noUndo = locked || (playing && (modifiers?.noUndo ?? false))
@@ -78,11 +79,11 @@ export default function Toolbar() {
 
       <div className="tool-group">
         <div className="tool-title">Edit</div>
-        <button className="btn" disabled={locked || !faceSel} title="Extrude selected faces (E)" onClick={extrudeSelection}>
-          Extrude <kbd>E</kbd>
+        <button className="btn" disabled={locked || !faceSel} title="Extrude selected faces (F)" onClick={extrudeSelection}>
+          Extrude <kbd>F</kbd>
         </button>
-        <button className="btn" disabled={locked || !faceSel} title="Subdivide selected faces (D)" onClick={subdivideSelection}>
-          Subdivide <kbd>D</kbd>
+        <button className="btn" disabled={locked || !faceSel} title="Subdivide selected faces (C)" onClick={subdivideSelection}>
+          Subdivide <kbd>C</kbd>
         </button>
         <button className="btn" disabled={locked || !hasSel} title="Delete selection (X)" onClick={deleteSelection}>
           Delete <kbd>X</kbd>
@@ -91,17 +92,20 @@ export default function Toolbar() {
 
       <div className="tool-group">
         <div className="tool-title">History</div>
-        <button className="btn" disabled={noUndo} title="Undo (Ctrl+Z)" onClick={undo}>Undo</button>
-        <button className="btn" disabled={noUndo} title="Redo (Ctrl+Shift+Z)" onClick={redo}>Redo</button>
-        <button
-          className="btn btn-danger"
-          disabled={locked}
-          onClick={() => {
-            if (window.confirm('Reset the shared model to a fresh cube for everyone?')) resetModel()
-          }}
-        >
-          Reset
-        </button>
+        <div className="tool-row">
+          <button className="btn btn-icon" disabled={noUndo} title="Undo (Ctrl+Z)" onClick={undo}>↶</button>
+          <button className="btn btn-icon" disabled={noUndo} title="Redo (Ctrl+Shift+Z)" onClick={redo}>↷</button>
+          <button
+            className="btn btn-icon btn-danger"
+            disabled={locked}
+            title="Reset the shared model to a fresh cube for everyone"
+            onClick={() => {
+              if (window.confirm('Reset the shared model to a fresh cube for everyone?')) resetModel()
+            }}
+          >
+            ⟲
+          </button>
+        </div>
       </div>
     </div>
   )

@@ -219,6 +219,16 @@ kbd {
   flex-shrink: 0;
 }
 
+.player-rename {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1.5px solid var(--accent);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  padding: 4px 6px;
+  width: 130px;
+}
+
 /* ------------------------------------------------------------------ */
 /* Toolbar                                                             */
 /* ------------------------------------------------------------------ */
@@ -236,6 +246,23 @@ kbd {
   padding: 12px;
   backdrop-filter: blur(8px);
   width: 150px;
+  /* stop short of the bottom-left view-cube so it never covers it */
+  max-height: calc(100% - 140px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.tool-row {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-icon {
+  flex: 1;
+  text-align: center;
+  font-size: 16px;
+  line-height: 1;
+  padding: 7px 0;
 }
 
 .tool-group {
@@ -257,6 +284,113 @@ kbd {
   letter-spacing: 1px;
   color: var(--muted);
   margin-bottom: 2px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Color / paint panel                                                 */
+/* ------------------------------------------------------------------ */
+
+.color-panel {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 12px;
+  backdrop-filter: blur(8px);
+  width: 168px;
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.color-panel .tool-group {
+  min-width: 0;
+}
+
+.color-panel .tool-group .btn {
+  text-align: left;
+}
+
+.seg {
+  display: flex;
+  gap: 4px;
+}
+
+.seg .btn {
+  flex: 1;
+  text-align: center;
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+}
+
+.swatch {
+  aspect-ratio: 1;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  padding: 0;
+}
+
+.swatch:hover {
+  transform: scale(1.12);
+}
+
+.swatch-active {
+  outline: 2px solid #fff;
+  outline-offset: 1px;
+}
+
+.color-custom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.color-custom input[type='color'] {
+  width: 40px;
+  height: 24px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  min-width: 0;
+}
+
+.slider-row span {
+  width: 34px;
+  flex: none;
+}
+
+.slider-row input {
+  flex: 1 1 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.panel-hint {
+  font-size: 11px;
+  line-height: 1.4;
+  margin-top: 2px;
 }
 
 /* ------------------------------------------------------------------ */

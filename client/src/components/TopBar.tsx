@@ -151,6 +151,8 @@ function Players() {
   useAwarenessVersion()
   const peers = getPeers(true)
   const [copied, setCopied] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
 
   const copy = async () => {
     try {
@@ -162,19 +164,44 @@ function Players() {
     }
   }
 
+  const startEdit = () => {
+    setDraft(me.name)
+    setEditing(true)
+  }
+  const commit = () => {
+    renameMe(draft.trim())
+    setEditing(false)
+  }
+
   return (
     <div className="players">
       {peers.map((p) => {
         const isMe = p.clientId === myClientId
+        if (isMe && editing) {
+          return (
+            <input
+              key={p.clientId}
+              className="player-rename"
+              autoFocus
+              value={draft}
+              maxLength={24}
+              style={{ borderColor: p.user.color }}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={commit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commit()
+                else if (e.key === 'Escape') setEditing(false)
+              }}
+            />
+          )
+        }
         return (
           <button
             key={p.clientId}
             className={`player-chip ${isMe ? 'player-me' : ''}`}
-            title={isMe ? 'Click to rename yourself' : p.user.name}
+            title={isMe ? 'Click to rename yourself (everyone sees it)' : p.user.name}
             onClick={() => {
-              if (!isMe) return
-              const name = window.prompt('Your name:', me.name)
-              if (name) renameMe(name)
+              if (isMe) startEdit()
             }}
           >
             <span className="player-dot" style={{ background: p.user.color }} />

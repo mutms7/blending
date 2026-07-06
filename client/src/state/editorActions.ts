@@ -35,20 +35,48 @@ export function addPrimitive(kind: PrimitiveKind) {
   useApp.setState({ mode: 'face', selection: faces })
 }
 
+/** Extrude/subdivide operate on faces, so they work in face mode and object mode. */
+function faceSelection(): string[] | null {
+  const { mode, selection } = useApp.getState()
+  if ((mode !== 'face' && mode !== 'object') || selection.length === 0) return null
+  return selection
+}
+
 export function extrudeSelection() {
   if (editingLocked()) return
-  const { mode, selection } = useApp.getState()
-  if (mode !== 'face' || selection.length === 0) return
-  const caps = mesh.extrudeFaces(selection, 0.4)
-  useApp.setState({ selection: caps, lastAction: 'extrude' })
+  const sel = faceSelection()
+  if (!sel) return
+  const caps = mesh.extrudeFaces(sel, 0.4)
+  useApp.setState({ mode: 'face', selection: caps, lastAction: 'extrude' })
 }
 
 export function subdivideSelection() {
   if (editingLocked()) return
-  const { mode, selection } = useApp.getState()
-  if (mode !== 'face' || selection.length === 0) return
-  const faces = mesh.subdivideFaces(selection)
-  useApp.setState({ selection: faces, lastAction: 'subdivide' })
+  const sel = faceSelection()
+  if (!sel) return
+  const faces = mesh.subdivideFaces(sel)
+  useApp.setState({ mode: 'face', selection: faces, lastAction: 'subdivide' })
+}
+
+/** Paint the active color onto whatever is currently selected (any mode). */
+export function applyColorToSelection() {
+  if (editingLocked()) return
+  const { mode, selection, color } = useApp.getState()
+  if (selection.length === 0) return
+  if (mode === 'face' || mode === 'object') {
+    mesh.colorFaces(selection, color)
+  } else if (mode === 'vertex') {
+    mesh.colorVerts(selection, color)
+  } else {
+    const verts = new Set<string>()
+    for (const eid of selection) {
+      const [a, b] = eid.split('~')
+      verts.add(a)
+      verts.add(b)
+    }
+    mesh.colorVerts(verts, color)
+  }
+  useApp.setState({ lastAction: 'color' })
 }
 
 export function deleteSelection() {

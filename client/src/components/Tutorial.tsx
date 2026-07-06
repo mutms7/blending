@@ -25,12 +25,12 @@ const STEPS: Step[] = [
   },
   {
     title: 'Extrude',
-    text: 'Press E (or the Extrude button) to pull a new block out of the selected face.',
+    text: 'Press F (or the Extrude button) to pull a new block out of the selected face.',
     done: (s) => s.lastAction === 'extrude',
   },
   {
     title: 'Subdivide',
-    text: 'Press D to split the selected face into four smaller faces.',
+    text: 'Press C to split the selected face into four smaller faces.',
     done: (s) => s.lastAction === 'subdivide',
   },
   {
