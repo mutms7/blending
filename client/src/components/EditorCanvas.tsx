@@ -20,7 +20,7 @@ import { drawStroke, getPaintTexture, redrawAll } from '../mesh/paintTexture'
 import { transformVerts } from '../mesh/transform'
 import { getPeers, mesh, publishCursor, useAwarenessVersion } from '../net/session'
 import { useApp } from '../state/store'
-import { focusOn, registerFocus, registerFrame, registerView } from '../game/cameraBus'
+import { focusOn, mainCameraQuat, registerFocus, registerFrame, registerView } from '../game/cameraBus'
 import { emitSplash, onSplash, type Splash } from '../game/paintFx'
 
 const SELECT_COLOR = '#ff9f2a'
@@ -608,6 +608,7 @@ function CameraRig() {
 
   useFrame((_, dt) => {
     if (!controls) return
+    mainCameraQuat.copy(camera.quaternion) // feed the corner view-cube
     const target = controls.target
     const ks = held.current
 

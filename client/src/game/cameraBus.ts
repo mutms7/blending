@@ -1,6 +1,15 @@
 // Lets DOM/UI code drive the in-canvas camera rig: recenter on the whole model
 // ("Frame") or smoothly focus on a specific point (clicking an object).
 
+import * as THREE from 'three'
+
+/**
+ * Live copy of the main camera's orientation, published every frame by the
+ * CameraRig and read by the corner view-cube so the mini cube mirrors the scene
+ * (like the navigation gizmo in Blender/Fusion).
+ */
+export const mainCameraQuat = new THREE.Quaternion()
+
 type FrameCb = () => void
 type FocusCb = (center: [number, number, number], radius: number) => void
 
