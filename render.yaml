@@ -16,6 +16,7 @@ services:
     envVars:
       - key: ANTHROPIC_API_KEY
         sync: false
-      # node:sqlite (used by the daily challenge) needs Node 22+.
+      # node:sqlite (used by the daily challenge) is stable and unflagged on Node 24.
+      # On the 22.x line it's gated behind --experimental-sqlite, so pin to 24.
       - key: NODE_VERSION
-        value: 22.11.0
+        value: 24.15.0
