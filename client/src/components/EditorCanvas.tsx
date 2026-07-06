@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
-import { GizmoHelper, GizmoViewcube, Grid, Html, OrbitControls, TransformControls } from '@react-three/drei'
+import { Grid, Html, OrbitControls, TransformControls } from '@react-three/drei'
 import {
   buildRenderData,
   edgesToLines,
@@ -20,7 +20,7 @@ import { drawStroke, getPaintTexture, redrawAll } from '../mesh/paintTexture'
 import { transformVerts } from '../mesh/transform'
 import { getPeers, mesh, publishCursor, useAwarenessVersion } from '../net/session'
 import { useApp } from '../state/store'
-import { focusOn, registerFocus, registerFrame } from '../game/cameraBus'
+import { focusOn, registerFocus, registerFrame, registerView } from '../game/cameraBus'
 import { emitSplash, onSplash, type Splash } from '../game/paintFx'
 
 const SELECT_COLOR = '#ff9f2a'
@@ -584,6 +584,17 @@ function CameraRig() {
     setGoal(new THREE.Vector3(c[0], c[1], c[2]), radius)
   }), [camera, controls])
 
+  // view-cube: look at the bounding-box midpoint from a world axis, a steady step back
+  useEffect(() => registerView((dir) => {
+    if (!controls) return
+    const { center, radius } = meshBounds()
+    const d = new THREE.Vector3(dir[0], dir[1], dir[2])
+    if (d.lengthSq() < 1e-6) return
+    d.normalize()
+    const dist = Math.max(radius * 2.8, 2.5)
+    goal.current = { target: center.clone(), pos: center.clone().addScaledVector(d, dist) }
+  }), [camera, controls])
+
   // frame the model once on first load so it isn't tucked under a panel
   useEffect(() => {
     const t = setTimeout(() => {
@@ -810,14 +821,6 @@ function Scene() {
         mouseButtons={mouseButtons}
         onEnd={() => useApp.setState({ lastAction: 'orbit' })}
       />
-      <GizmoHelper alignment="bottom-left" margin={[76, 76]} onTarget={() => meshBounds().center}>
-        <GizmoViewcube
-          color="#20242c"
-          textColor="#e7eaf0"
-          strokeColor="#4dabf7"
-          hoverColor="#4dabf7"
-        />
-      </GizmoHelper>
     </>
   )
 }

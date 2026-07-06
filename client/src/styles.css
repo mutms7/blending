@@ -5,6 +5,8 @@
   --muted: #98a1b3;
   --accent: #4dabf7;
   --danger: #ff6b6b;
+  --font-ui: 'Outfit Variable', system-ui, -apple-system, sans-serif;
+  --font-display: 'Space Grotesk Variable', 'Outfit Variable', system-ui, sans-serif;
 }
 
 * {
@@ -12,10 +14,11 @@
 }
 
 body {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-ui);
   color: var(--text);
   user-select: none;
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 .app {
@@ -122,8 +125,9 @@ kbd {
 }
 
 .logo {
+  font-family: var(--font-display);
   font-weight: 700;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
 }
 
 .conn-dot {
@@ -155,6 +159,7 @@ kbd {
 }
 
 .prompt-text {
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 17px;
 }
@@ -247,9 +252,41 @@ kbd {
   backdrop-filter: blur(8px);
   width: 150px;
   /* stop short of the bottom-left view-cube so it never covers it */
-  max-height: calc(100% - 140px);
+  max-height: calc(100% - 184px);
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+.viewcube {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  width: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 10px;
+  backdrop-filter: blur(8px);
+}
+
+.viewcube-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.viewcube-btn {
+  padding: 6px 2px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.viewcube-home {
+  text-align: center;
+  font-size: 12px;
 }
 
 .tool-row {
@@ -259,6 +296,7 @@ kbd {
 
 .btn-icon {
   flex: 1;
+  justify-content: center;
   text-align: center;
   font-size: 16px;
   line-height: 1;
@@ -443,7 +481,7 @@ kbd {
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
 }
 
-.modal h2 { margin: 8px 0; }
+.modal h2 { margin: 8px 0; font-family: var(--font-display); }
 
 .modal-actions {
   display: flex;
@@ -457,6 +495,7 @@ kbd {
 .reveal-prompt { margin-top: 0; }
 
 .score-big {
+  font-family: var(--font-display);
   font-size: 72px;
   font-weight: 800;
   line-height: 1;
@@ -709,6 +748,7 @@ kbd {
 }
 
 .tutorial-title {
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 16px;
   margin-bottom: 4px;
@@ -736,7 +776,7 @@ kbd {
   border-radius: 6px;
   padding: 2px 7px;
   font-size: 12px;
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--font-ui);
   color: #e7eaf0;
   white-space: nowrap;
   transform: translateY(-18px);

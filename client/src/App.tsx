@@ -3,6 +3,7 @@ import EditorCanvas from './components/EditorCanvas'
 import TopBar from './components/TopBar'
 import Toolbar from './components/Toolbar'
 import ColorPanel from './components/ColorPanel'
+import ViewCube from './components/ViewCube'
 import HelpPanel from './components/HelpPanel'
 import Tutorial from './components/Tutorial'
 import { ErrorModal, GalleryModal, RevealModal, ScoringOverlay } from './components/Modals'
@@ -85,6 +86,7 @@ export default function App() {
         <EditorCanvas />
         <Toolbar />
         <ColorPanel />
+        <ViewCube />
         <HelpPanel />
         <Tutorial />
       </div>

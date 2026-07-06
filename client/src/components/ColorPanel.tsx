@@ -83,10 +83,10 @@ export default function ColorPanel() {
           <button
             className="btn btn-primary"
             disabled={locked || selection.length === 0}
-            title="Fill the current selection with the chosen color"
+            title="Fill the current selection with the chosen color (covers any paint on it)"
             onClick={applyColorToSelection}
           >
-            Color {mode} selection
+            Color {mode}
           </button>
           <div className="panel-hint muted">
             Pick vertices, edges, faces, or a whole object, then apply.

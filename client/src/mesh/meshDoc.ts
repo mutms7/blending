@@ -176,6 +176,22 @@ export class MeshDoc {
     this.edit(() => this.strokes.push(strokes))
   }
 
+  /** Remove all free-draw dabs on the given faces (so a fresh fill color shows on top). */
+  clearStrokesOnFaces(faceIds: Iterable<string>) {
+    const dead = new Set(faceIds)
+    const keep: PaintStroke[] = []
+    let removed = false
+    this.strokes.forEach((s) => {
+      if (dead.has(s.f)) removed = true
+      else keep.push(s)
+    })
+    if (!removed) return
+    this.edit(() => {
+      this.strokes.delete(0, this.strokes.length)
+      if (keep.length) this.strokes.push(keep)
+    })
+  }
+
   /**
    * Extrude each selected face along its own normal, Blender "extrude individual
    * faces" style. Returns the new cap face ids (so the caller can select them

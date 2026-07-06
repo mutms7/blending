@@ -27,3 +27,17 @@ export function registerFocus(cb: FocusCb): () => void {
 export function focusOn(center: [number, number, number], radius: number) {
   focusCb?.(center, radius)
 }
+
+type ViewCb = (dir: [number, number, number]) => void
+let viewCb: ViewCb | null = null
+
+export function registerView(cb: ViewCb): () => void {
+  viewCb = cb
+  return () => {
+    if (viewCb === cb) viewCb = null
+  }
+}
+/** View the whole model from a world-axis direction (from the view-cube). */
+export function viewFromDirection(dir: [number, number, number]) {
+  viewCb?.(dir)
+}

@@ -65,6 +65,8 @@ export function applyColorToSelection() {
   if (selection.length === 0) return
   if (mode === 'face' || mode === 'object') {
     mesh.colorFaces(selection, color)
+    // a solid fill should cover any free-draw paint already on those faces
+    mesh.clearStrokesOnFaces(selection)
   } else if (mode === 'vertex') {
     mesh.colorVerts(selection, color)
   } else {
