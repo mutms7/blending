@@ -31,12 +31,25 @@ and `server/` (Node + Express + y-websocket + Anthropic scoring). See README.md 
   is a second mesh (same geometry, `raycast={()=>null}`) drawn over the surface. The brush is
   scoped by select mode (face→hit face, object→connected island, vertex/edge→`vertColors`).
   Timelapse/`captureViews` do not show paint (no overlay/uv there) — intentional.
+- Free-draw paint is texture-based, NOT vertex colors: each face gets a square cell in a UV atlas
+  (`faceCellMap` in `mesh/geometry.ts`, packed by sorted face id) rendered onto one shared
+  `CanvasTexture` (`mesh/paintTexture.ts`). Dabs are `PaintStroke`s in the `strokes` Y.Array
+  (undoable, cell-local coords so they survive atlas re-packing). `PaintLayer` in `EditorCanvas`
+  is a second mesh (same geometry, `raycast={()=>null}`) drawn over the surface. The brush is
+  scoped by select mode (face→hit face, object→connected island, vertex/edge→`vertColors`).
+  Timelapse/`captureViews` do not show paint (no overlay/uv there) — intentional.
 - Camera: `CameraRig` (in `EditorCanvas`) owns fly + smooth focus via `game/cameraBus.ts`
   (`frameObject` = whole mesh, `focusOn` = a point). Object-mode clicks call `focusOn`.
 - `W/A/S/D/Q/E` are reserved for camera fly (handled by `CameraRig` inside the Canvas, not the
   App keydown switch). Tool keys avoid those letters: gizmo `G/R/T`, extrude `F`, subdivide `C`,
   delete `X`, paint toggle `P`. In paint mode OrbitControls left-drag is disabled (paint) and
   orbit moves to right-drag via `mouseButtons`.
+- Camera: `CameraRig` (in `EditorCanvas`) owns fly + smooth focus via `game/cameraBus.ts`
+  (`frameObject` = whole mesh, `focusOn` = a point). Object-mode clicks call `focusOn`. The corner
+  view-cube (`ViewCube.tsx`) is its OWN small `<Canvas>` whose camera mirrors the main camera each
+  frame via `cameraBus.mainCameraQuat`; faces/edges/corners call `viewFromDirection`.
+- Starting cube seeds once in `session.ts` on first ws sync OR a fallback timer, so it still appears
+  when the server is unreachable (offline/solo). Don't gate seeding on sync alone.
 - `main.tsx` deliberately omits React StrictMode: the Yjs session is a module-level singleton
   (`client/src/net/session.ts`) and double-mount would tear down the websocket in dev.
 - Server uses Node's built-in `node:sqlite` (Node 20.19+/22+) — do not add better-sqlite3.
