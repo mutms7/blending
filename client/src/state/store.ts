@@ -4,6 +4,8 @@ import type { DailyInfo, ScoreResult } from '../game/api'
 
 export type GamePhase = 'idle' | 'playing' | 'scoring' | 'reveal' | 'error'
 export type GizmoMode = 'translate' | 'rotate' | 'scale'
+export type Tool = 'edit' | 'paint'
+export type BrushType = 'marker' | 'airbrush' | 'highlighter'
 
 export interface RoundModifiers {
   noUndo: boolean
@@ -24,6 +26,12 @@ export interface AppState {
   selection: string[]
   gizmoMode: GizmoMode
   meshVersion: number
+  // tools + coloring
+  tool: Tool
+  color: string
+  brushType: BrushType
+  brushSize: number
+  brushOpacity: number
   // connection
   connected: boolean
   // game (mirrored from the shared Yjs game map)
@@ -58,6 +66,11 @@ export const useApp = create<AppState>((set) => ({
   selection: [],
   gizmoMode: 'translate',
   meshVersion: 0,
+  tool: 'edit',
+  color: '#ff6b6b',
+  brushType: 'marker',
+  brushSize: 0.35,
+  brushOpacity: 0.9,
   connected: false,
   phase: 'idle',
   prompt: null,

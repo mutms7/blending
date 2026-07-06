@@ -32,7 +32,8 @@ export default function TimelapsePlayer({ recording }: { recording: Recording })
     scene.add(key)
 
     const mat = new THREE.MeshStandardMaterial({
-      color: '#9fb4d8',
+      vertexColors: true,
+      color: '#ffffff',
       roughness: 0.75,
       metalness: 0.08,
       flatShading: true,
@@ -44,6 +45,8 @@ export default function TimelapsePlayer({ recording }: { recording: Recording })
     const meshLike: MeshLike = {
       verts: doc.getMap<Vec3>('verts'),
       faces: doc.getMap<string[]>('faces'),
+      faceColors: doc.getMap<string>('faceColors'),
+      vertColors: doc.getMap<string>('vertColors'),
     }
 
     let meshObj: THREE.Mesh | null = null

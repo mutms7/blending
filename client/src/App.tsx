@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import EditorCanvas from './components/EditorCanvas'
 import TopBar from './components/TopBar'
 import Toolbar from './components/Toolbar'
+import ColorPanel from './components/ColorPanel'
+import ViewCube from './components/ViewCube'
 import HelpPanel from './components/HelpPanel'
 import Tutorial from './components/Tutorial'
 import { ErrorModal, GalleryModal, RevealModal, ScoringOverlay } from './components/Modals'
@@ -34,6 +36,7 @@ export default function App() {
       }
       if (e.ctrlKey || e.metaKey || e.altKey) return
 
+      // W/A/S/D/Q/E are reserved for camera fly (handled inside the canvas).
       switch (e.key.toLowerCase()) {
         case '1':
           useApp.getState().setMode('vertex')
@@ -44,10 +47,22 @@ export default function App() {
         case '3':
           useApp.getState().setMode('face')
           break
-        case 'e':
+        case '4':
+          useApp.getState().setMode('object')
+          break
+        case 'g':
+          useApp.setState({ gizmoMode: 'translate' })
+          break
+        case 'r':
+          useApp.setState({ gizmoMode: 'rotate' })
+          break
+        case 't':
+          useApp.setState({ gizmoMode: 'scale' })
+          break
+        case 'f':
           extrudeSelection()
           break
-        case 'd':
+        case 'c':
           subdivideSelection()
           break
         case 'x':
@@ -55,14 +70,8 @@ export default function App() {
         case 'backspace':
           deleteSelection()
           break
-        case 'w':
-          useApp.setState({ gizmoMode: 'translate' })
-          break
-        case 'r':
-          useApp.setState({ gizmoMode: 'rotate' })
-          break
-        case 's':
-          useApp.setState({ gizmoMode: 'scale' })
+        case 'p':
+          useApp.setState((s) => ({ tool: s.tool === 'paint' ? 'edit' : 'paint' }))
           break
       }
     }
@@ -76,6 +85,8 @@ export default function App() {
       <div className="editor-area">
         <EditorCanvas />
         <Toolbar />
+        <ColorPanel />
+        <ViewCube />
         <HelpPanel />
         <Tutorial />
       </div>

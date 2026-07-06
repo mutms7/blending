@@ -2,7 +2,22 @@ import * as Y from 'yjs'
 import { PRIMITIVES, type PrimitiveKind } from './primitives'
 
 export type Vec3 = [number, number, number]
-export type SelMode = 'vertex' | 'edge' | 'face'
+export type SelMode = 'vertex' | 'edge' | 'face' | 'object'
+
+/**
+ * One free-draw brush dab on a face's local canvas. Stored compactly (short keys)
+ * because a stroke is many of these. Coordinates are cell-local (0..1) so they
+ * survive atlas re-packing when topology changes.
+ */
+export interface PaintStroke {
+  f: string // face id
+  u: number // cell-local u (0..1)
+  v: number // cell-local v (0..1)
+  r: number // radius as a fraction of the cell
+  c: string // hex color
+  o: number // flow / opacity 0..1
+  t: string // brush type
+}
 
 const rid = () => Math.random().toString(36).slice(2, 10)
 
@@ -50,16 +65,28 @@ export class MeshDoc {
   readonly doc: Y.Doc
   readonly verts: Y.Map<Vec3>
   readonly faces: Y.Map<string[]>
+  /** Per-face fill color (hex). Absent = default gray. */
+  readonly faceColors: Y.Map<string>
+  /** Per-vertex color (hex), painted or applied to a vertex selection. Overrides the face color. */
+  readonly vertColors: Y.Map<string>
+  /** Free-draw brush dabs (texture painting on faces). */
+  readonly strokes: Y.Array<PaintStroke>
   readonly undo: Y.UndoManager
 
   constructor(doc = new Y.Doc()) {
     this.doc = doc
     this.verts = doc.getMap<Vec3>('verts')
     this.faces = doc.getMap<string[]>('faces')
-    this.undo = new Y.UndoManager([this.verts, this.faces], {
-      trackedOrigins: new Set([MeshDoc.LOCAL]),
-      captureTimeout: 400,
-    })
+    this.faceColors = doc.getMap<string>('faceColors')
+    this.vertColors = doc.getMap<string>('vertColors')
+    this.strokes = doc.getArray<PaintStroke>('strokes')
+    this.undo = new Y.UndoManager(
+      [this.verts, this.faces, this.faceColors, this.vertColors, this.strokes],
+      {
+        trackedOrigins: new Set([MeshDoc.LOCAL]),
+        captureTimeout: 400,
+      }
+    )
   }
 
   /** A user edit — tracked by undo, merged with the peers' edits. */
@@ -110,6 +137,58 @@ export class MeshDoc {
       for (const [id, p] of entries) {
         if (this.verts.has(id)) this.verts.set(id, p)
       }
+    })
+  }
+
+  /** Paint a fill color onto whole faces (used by face/object selection coloring). */
+  colorFaces(faceIds: Iterable<string>, hex: string) {
+    this.edit(() => {
+      for (const fid of faceIds) if (this.faces.has(fid)) this.faceColors.set(fid, hex)
+    })
+  }
+
+  /** Set the color of individual vertices (vertex/edge selection coloring). */
+  colorVerts(vertIds: Iterable<string>, hex: string) {
+    this.edit(() => {
+      for (const vid of vertIds) if (this.verts.has(vid)) this.vertColors.set(vid, hex)
+    })
+  }
+
+  /**
+   * Free-draw brush stroke: set many vertices to (already blended) colors at once.
+   * Kept as its own transaction so a stroke's rapid dabs merge into one undo step.
+   */
+  paintVerts(entries: Array<[string, string]>) {
+    if (entries.length === 0) return
+    this.edit(() => {
+      for (const [vid, hex] of entries) if (this.verts.has(vid)) this.vertColors.set(vid, hex)
+    })
+  }
+
+  /** Append a texture-paint dab. Rapid dabs merge into one undo step via the capture timeout. */
+  addStroke(stroke: PaintStroke) {
+    this.edit(() => this.strokes.push([stroke]))
+  }
+
+  /** Append many dabs in a single transaction (one pointer move's worth), so painting stays cheap. */
+  addStrokes(strokes: PaintStroke[]) {
+    if (strokes.length === 0) return
+    this.edit(() => this.strokes.push(strokes))
+  }
+
+  /** Remove all free-draw dabs on the given faces (so a fresh fill color shows on top). */
+  clearStrokesOnFaces(faceIds: Iterable<string>) {
+    const dead = new Set(faceIds)
+    const keep: PaintStroke[] = []
+    let removed = false
+    this.strokes.forEach((s) => {
+      if (dead.has(s.f)) removed = true
+      else keep.push(s)
+    })
+    if (!removed) return
+    this.edit(() => {
+      this.strokes.delete(0, this.strokes.length)
+      if (keep.length) this.strokes.push(keep)
     })
   }
 
@@ -183,7 +262,7 @@ export class MeshDoc {
 
   deleteSelection(mode: SelMode, ids: string[]) {
     this.edit(() => {
-      if (mode === 'face') {
+      if (mode === 'face' || mode === 'object') {
         for (const fid of ids) this.faces.delete(fid)
       } else if (mode === 'vertex') {
         const dead = new Set(ids)
@@ -212,7 +291,7 @@ export class MeshDoc {
     })
   }
 
-  /** Remove vertices no longer referenced by any face. Call inside a transaction. */
+  /** Remove vertices no longer referenced by any face, plus stale colors. Call inside a transaction. */
   private pruneOrphanVerts() {
     const used = new Set<string>()
     this.faces.forEach((vs) => vs.forEach((v) => used.add(v)))
@@ -221,6 +300,21 @@ export class MeshDoc {
       if (!used.has(id)) dead.push(id)
     })
     for (const id of dead) this.verts.delete(id)
+    this.pruneColors()
+  }
+
+  /** Drop color entries whose face/vertex no longer exists. Call inside a transaction. */
+  private pruneColors() {
+    const deadF: string[] = []
+    this.faceColors.forEach((_, fid) => {
+      if (!this.faces.has(fid)) deadF.push(fid)
+    })
+    for (const fid of deadF) this.faceColors.delete(fid)
+    const deadV: string[] = []
+    this.vertColors.forEach((_, vid) => {
+      if (!this.verts.has(vid)) deadV.push(vid)
+    })
+    for (const vid of deadV) this.vertColors.delete(vid)
   }
 
   /** Wipe the model and start from a fresh cube. Not undoable (used for round resets). */
@@ -232,6 +326,9 @@ export class MeshDoc {
       const vertIds: string[] = []
       this.verts.forEach((_, id) => vertIds.push(id))
       for (const id of vertIds) this.verts.delete(id)
+      this.faceColors.forEach((_, id) => this.faceColors.delete(id))
+      this.vertColors.forEach((_, id) => this.vertColors.delete(id))
+      if (this.strokes.length > 0) this.strokes.delete(0, this.strokes.length)
 
       const { verts, faces } = PRIMITIVES.cube()
       const ids = verts.map(() => rid())

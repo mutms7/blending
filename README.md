@@ -42,19 +42,48 @@ room, shows a live cursor and selection, and edits the model for ~25 seconds.
 6. Every finished round lands in the session **Gallery** — a side-by-side grid of prompts,
    thumbnails, scores, and verdicts.
 
-**Controls:** left-drag orbit · scroll zoom · right-drag pan · click select · shift-click
-multi-select · `1`/`2`/`3` vertex/edge/face mode · `W`/`R`/`S` move/rotate/scale gizmo ·
-`E` extrude · `D` subdivide · `X` delete · `Ctrl+Z` / `Ctrl+Shift+Z` undo/redo.
+### Modeling tools
 
-Rotate and scale operate on the selection around its centroid, so you can twist an
-extruded arm or taper a rocket nose the way you would in Blender.
+- **Select modes** `1`/`2`/`3`/`4` — vertex, edge, face, or whole **object**. Object mode
+  clicks a face and grabs the entire connected island (a cube you added, an extruded arm),
+  computed on the fly from shared vertices (no group ids stored in the CRDT).
+- **Gizmo** `G`/`R`/`T` — move, rotate, scale. Rotate and scale operate around the
+  selection's centroid, so you can twist an extruded arm or taper a rocket nose the
+  Blender way. Drag the arrows/rings/handles.
+- **Edit** `F` extrude · `C` subdivide · `X` delete.
+- **Color** (Edit tool) — pick vertices/edges/faces/an object, choose a color, and hit
+  *Color … selection*. Face and object selections get a flat fill; vertex/edge selections
+  set per-vertex colors that override the fill.
+- **Paint** (`P`) — free-draw directly on the surface. Left-drag paints, right-drag orbits.
+  Painting on faces is **precise**: each face is its own little canvas (a UV atlas texture),
+  so you can draw anywhere on a face, not just at its corners. Three pen types: **Marker**
+  (solid), **Airbrush** (soft, builds up on repeat passes), and **Highlighter** (translucent
+  wash), with size and flow sliders. A paint-splash burst pops on each dab. Strokes are stored
+  in the shared doc, so paint syncs live to everyone and is undoable.
+  - The **select mode scopes the brush**: in **face** mode you paint only the face under the
+    cursor; in **object** mode paint stays on the object you're touching; in **vertex**/**edge**
+    mode the brush colors vertices/edges instead. If something is selected, painting is confined
+    to it; clear the selection to paint anything.
+
+### Camera / navigation
+
+- **Orbit** left-drag · **zoom** scroll · **pan** right-drag.
+- **Fly** `W`/`A`/`S`/`D` to move, `Q`/`E` up/down — all six are relative to the camera angle,
+  and speed scales with distance to the target.
+- **Click an object** (object mode) to smoothly recenter the camera on it at a consistent
+  framing distance. The model also auto-frames on load so it isn't tucked under a panel.
+- **View-cube** (bottom-left) — click a face/edge/corner to snap the camera to that angle,
+  like the navigation gizmo in Blender/Fusion. The **⌂ Frame** button recenters on the model.
+
+`Ctrl+Z` / `Ctrl+Shift+Z` undo/redo (color and paint changes are undoable too).
 
 ### Tests
 
 `npm test` runs both suites:
 
 - **client** (vitest): the mesh core — primitives, extrude/subdivide/delete invariants,
-  orphan pruning, per-client undo across two synced docs, gizmo transform math
+  orphan pruning, per-client undo across two synced docs, gizmo transform math, object
+  connectivity (connected-component islands), and coloring/brush blending
 - **server** (node:test): daily-challenge logic — prompt determinism, leaderboard
   ranking, and streak rules (same-day, consecutive-day, gaps, month boundaries)
 
@@ -62,11 +91,11 @@ extruded arm or taper a rocket nose the way you would in Blender.
 
 ```
 client/  React + TypeScript + Vite, Three.js via @react-three/fiber + drei
-  src/mesh/       mesh data model (Yjs) + geometry building
+  src/mesh/       mesh data model (Yjs), geometry+color building, object connectivity, brush math
   src/net/        room session: websocket provider, awareness, presence
-  src/game/       round state machine, screenshot capture, timelapse recorder, API client
+  src/game/       round state machine, screenshot capture, timelapse recorder, API client, fx buses
   src/state/      zustand UI store + editor actions
-  src/components/ canvas scene, toolbar, HUD, tutorial, timelapse player, modals
+  src/components/ canvas scene, toolbar, color/paint panel, HUD, tutorial, timelapse player, modals
 
 server/  Node + TypeScript (one process, one port)
   src/index.ts    express HTTP API + y-websocket room sync (ws upgrade)

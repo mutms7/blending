@@ -3,3 +3,6 @@ dist/
 .env
 *.local
 .DS_Store
+
+# local SQLite data (daily challenge / leaderboard / streaks)
+server/data/
