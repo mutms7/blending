@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import * as THREE from 'three'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { frameObject, mainCameraQuat, viewFromDirection } from '../game/cameraBus'
@@ -49,42 +49,71 @@ function labelTexture(text: string): THREE.CanvasTexture {
   return tex
 }
 
+type Vec3 = [number, number, number]
+
+// 12 edges: a chunky box along each cube edge; clicking gives the diagonal view
+// between the two adjacent faces.
+const EDGES: Array<{ position: Vec3; size: Vec3; dir: Vec3 }> = []
+for (const a of [-1, 1]) {
+  for (const b of [-1, 1]) {
+    EDGES.push({ position: [0, a * 0.5, b * 0.5], size: [0.66, 0.16, 0.16], dir: [0, a, b] })
+    EDGES.push({ position: [a * 0.5, 0, b * 0.5], size: [0.16, 0.66, 0.16], dir: [a, 0, b] })
+    EDGES.push({ position: [a * 0.5, b * 0.5, 0], size: [0.16, 0.16, 0.66], dir: [a, b, 0] })
+  }
+}
+
+// 8 corners: clicking gives the three-face diagonal view.
+const CORNERS: Array<{ position: Vec3; dir: Vec3 }> = []
+for (const x of [-1, 1])
+  for (const y of [-1, 1])
+    for (const z of [-1, 1]) CORNERS.push({ position: [x * 0.5, y * 0.5, z * 0.5], dir: [x, y, z] })
+
 function CubeMesh() {
-  const [hover, setHover] = useState<number | null>(null)
-  const edges = useMemo(() => new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1)), [])
+  const [hover, setHover] = useState<string | null>(null)
+
+  const hoverProps = (id: string, dir: Vec3) => ({
+    onPointerOver: (e: { stopPropagation: () => void }) => {
+      e.stopPropagation()
+      setHover(id)
+      document.body.style.cursor = 'pointer'
+    },
+    onPointerOut: () => {
+      setHover((h) => (h === id ? null : h))
+      document.body.style.cursor = ''
+    },
+    onPointerDown: (e: { stopPropagation: () => void }) => {
+      e.stopPropagation()
+      viewFromDirection(dir)
+    },
+  })
+
   return (
     <group>
-      {FACES.map((f, i) => (
-        <mesh
-          key={f.label}
-          position={f.position}
-          rotation={f.rotation}
-          onPointerOver={(e) => {
-            e.stopPropagation()
-            setHover(i)
-            document.body.style.cursor = 'pointer'
-          }}
-          onPointerOut={() => {
-            setHover((h) => (h === i ? null : h))
-            document.body.style.cursor = ''
-          }}
-          onPointerDown={(e) => {
-            e.stopPropagation()
-            viewFromDirection(f.dir)
-          }}
-        >
-          <planeGeometry args={[0.96, 0.96]} />
+      {FACES.map((f) => (
+        <mesh key={f.label} position={f.position} rotation={f.rotation} {...hoverProps(`f-${f.label}`, f.dir)}>
+          <planeGeometry args={[0.9, 0.9]} />
           <meshBasicMaterial
             map={labelTexture(f.label)}
-            color={hover === i ? '#4dabf7' : '#ffffff'}
+            color={hover === `f-${f.label}` ? '#4dabf7' : '#ffffff'}
             side={THREE.DoubleSide}
             toneMapped={false}
           />
         </mesh>
       ))}
-      <lineSegments geometry={edges}>
-        <lineBasicMaterial color="#657289" />
-      </lineSegments>
+
+      {EDGES.map((ed, i) => (
+        <mesh key={`e${i}`} position={ed.position} {...hoverProps(`e-${i}`, ed.dir)}>
+          <boxGeometry args={ed.size} />
+          <meshBasicMaterial color={hover === `e-${i}` ? '#4dabf7' : '#3d4656'} toneMapped={false} />
+        </mesh>
+      ))}
+
+      {CORNERS.map((cn, i) => (
+        <mesh key={`c${i}`} position={cn.position} {...hoverProps(`c-${i}`, cn.dir)}>
+          <boxGeometry args={[0.18, 0.18, 0.18]} />
+          <meshBasicMaterial color={hover === `c-${i}` ? '#4dabf7' : '#4a5568'} toneMapped={false} />
+        </mesh>
+      ))}
     </group>
   )
 }

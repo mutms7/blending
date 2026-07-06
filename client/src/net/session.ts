@@ -116,15 +116,22 @@ provider.on('status', ({ status }: { status: string }) => {
   useApp.setState({ connected: status === 'connected' })
 })
 
-// Seed an empty room with a starting cube (first player only, best effort).
+// Seed an empty room with a starting cube. Runs once, whichever comes first:
+// right after the initial server sync (so we don't stomp an existing room), or a
+// fallback timer so a starting cube still appears when the server is unreachable
+// (solo / offline dev).
+let seeded = false
+function seedStartingCube() {
+  if (seeded) return
+  if (mesh.isEmpty() && awareness.getStates().size <= 1) {
+    seeded = true
+    mesh.resetToCube()
+  }
+}
 provider.on('sync', (isSynced: boolean) => {
-  if (!isSynced) return
-  setTimeout(() => {
-    if (mesh.isEmpty() && awareness.getStates().size <= 1) {
-      mesh.resetToCube()
-    }
-  }, 300)
+  if (isSynced) setTimeout(seedStartingCube, 200)
 })
+setTimeout(seedStartingCube, 1500)
 
 // ---------------------------------------------------------------------------
 // Awareness as a React hook (version counter -> re-render on change)
