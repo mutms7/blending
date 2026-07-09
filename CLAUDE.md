@@ -52,7 +52,8 @@ and `server/` (Node + Express + y-websocket + Anthropic scoring). See README.md 
   when the server is unreachable (offline/solo). Don't gate seeding on sync alone.
 - `main.tsx` deliberately omits React StrictMode: the Yjs session is a module-level singleton
   (`client/src/net/session.ts`) and double-mount would tear down the websocket in dev.
-- Server uses Node's built-in `node:sqlite` (Node 20.19+/22+) — do not add better-sqlite3.
+- Server uses Node's built-in `node:sqlite`, unflagged on Node 24 (repo pins 24 via
+  `.node-version`; deploy sets `NODE_VERSION`) — do not add better-sqlite3.
 - `y-websocket/bin/utils` has no bundled types; the declaration lives in
   `server/src/y-websocket-utils.d.ts`.
 - Vite HMR of `session.ts`/`game.ts` can leave stale module instances; hard-reload the browser

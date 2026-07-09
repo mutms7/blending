@@ -8,7 +8,8 @@ actionable feedback. Lightweight Blender meets Jackbox.
 
 ## Quick start (local dev)
 
-Requires Node 20+.
+Requires **Node 24+** (the server uses the built-in `node:sqlite`, which is unflagged on
+Node 24; a `.node-version` is checked in).
 
 ```bash
 npm install
@@ -52,8 +53,10 @@ room, shows a live cursor and selection, and edits the model for ~25 seconds.
   Blender way. Drag the arrows/rings/handles.
 - **Edit** `F` extrude · `C` subdivide · `X` delete.
 - **Color** (Edit tool) — pick vertices/edges/faces/an object, choose a color, and hit
-  *Color … selection*. Face and object selections get a flat fill; vertex/edge selections
-  set per-vertex colors that override the fill.
+  **Color face** (the button names the current mode: *Color object/edge/vertex*). Face and
+  object selections get a flat fill; vertex/edge selections set per-vertex colors that
+  override the fill. Filling a face also clears any free-draw paint on it, so the solid
+  color shows on top.
 - **Paint** (`P`) — free-draw directly on the surface. Left-drag paints, right-drag orbits.
   Painting on faces is **precise**: each face is its own little canvas (a UV atlas texture),
   so you can draw anywhere on a face, not just at its corners. Three pen types: **Marker**
@@ -91,7 +94,8 @@ room, shows a live cursor and selection, and edits the model for ~25 seconds.
 
 ```
 client/  React + TypeScript + Vite, Three.js via @react-three/fiber + drei
-  src/mesh/       mesh data model (Yjs), geometry+color building, object connectivity, brush math
+  src/mesh/       mesh data model (Yjs), geometry+color building, object connectivity,
+                  brush math, paint-texture atlas (paintTexture.ts)
   src/net/        room session: websocket provider, awareness, presence
   src/game/       round state machine, screenshot capture, timelapse recorder, API client, fx buses
   src/state/      zustand UI store + editor actions
@@ -106,10 +110,14 @@ server/  Node + TypeScript (one process, one port)
 ### The sync model
 
 The shared model is a Yjs document, synced through `y-websocket` (the room name is the
-websocket path). Two shared maps represent the mesh:
+websocket path). Shared collections on the doc represent the mesh:
 
 - `verts`: vertex id → `[x, y, z]`
 - `faces`: face id → ordered list of vertex ids (CCW from outside; n-gons allowed)
+- `faceColors` / `vertColors`: per-face fill and per-vertex colors (color/paint is CRDT
+  state too, so fills and vertex paint sync and undo like geometry)
+- `strokes`: free-draw paint dabs, drawn onto a per-face UV-atlas `CanvasTexture` and
+  overlaid on the model (cell-local coords, so they survive atlas re-packing)
 
 Concurrent edits merge **per key**: two people moving different vertices never conflict,
 and two people moving the *same* vertex resolve last-writer-wins on that vertex alone.
@@ -187,7 +195,7 @@ against the server that served the page. No separate client/API URLs to keep in 
 **New + → Blueprint** and point it at the repo — [`render.yaml`](render.yaml) provisions the
 service. Set `ANTHROPIC_API_KEY` (a secret in the dashboard). Build is `npm install && npm run
 build`; start is `npm start`. Render injects `$PORT` (the server reads it) and terminates TLS,
-so sync is upgraded to `wss://` automatically. Any host that runs a long-lived Node 22+ process
+so sync is upgraded to `wss://` automatically. Any host that runs a long-lived Node 24 process
 (Railway, Fly, a VPS) works the same way with those two commands.
 
 - The build order matters: root `npm run build` builds the server then the client, so
